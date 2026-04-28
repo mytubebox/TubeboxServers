@@ -24,4 +24,3 @@ const authenticateAdmin = (req, res, next) => {
     }
 };
 exports.authenticateAdmin = authenticateAdmin;
-//# sourceMappingURL=auth.js.map

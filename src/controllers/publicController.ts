@@ -39,7 +39,14 @@ export const getVideos = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const getVideoById = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
+  const idParam = req.params.id;
+
+if (typeof idParam !== 'string') {
+  res.status(400).json({ error: 'Invalid ID' });
+  return;
+}
+
+const id = idParam;
   try {
     const video = await prisma.video.findUnique({
       where: { id, status: 'READY' }
@@ -57,7 +64,14 @@ export const getVideoById = async (req: Request, res: Response): Promise<void> =
 };
 
 export const viewVideo = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
+  const idParam = req.params.id;
+
+if (typeof idParam !== 'string') {
+  res.status(400).json({ error: 'Invalid ID' });
+  return;
+}
+
+const id = idParam;
   try {
     const video = await prisma.video.update({
       where: { id },
@@ -70,7 +84,14 @@ export const viewVideo = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const likeVideo = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
+  const idParam = req.params.id;
+
+if (typeof idParam !== 'string') {
+  res.status(400).json({ error: 'Invalid ID' });
+  return;
+}
+
+const id = idParam;
   try {
     const video = await prisma.video.update({
       where: { id },
@@ -83,7 +104,14 @@ export const likeVideo = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const downloadVideo = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
+  const idParam = req.params.id;
+
+if (typeof idParam !== 'string') {
+  res.status(400).json({ error: 'Invalid ID' });
+  return;
+}
+
+const id = idParam;
   try {
     const video = await prisma.video.update({
       where: { id },

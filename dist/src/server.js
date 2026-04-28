@@ -26,4 +26,3 @@ app.get('/health', (req, res) => {
 app.listen(PORT, () => {
     console.log(`[Server] Tubebox Video Streaming Backend running on http://localhost:${PORT}`);
 });
-//# sourceMappingURL=server.js.map

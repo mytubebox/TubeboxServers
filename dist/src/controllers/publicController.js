@@ -41,7 +41,12 @@ const getVideos = async (req, res) => {
 };
 exports.getVideos = getVideos;
 const getVideoById = async (req, res) => {
-    const { id } = req.params;
+    const idParam = req.params.id;
+    if (typeof idParam !== 'string') {
+        res.status(400).json({ error: 'Invalid ID' });
+        return;
+    }
+    const id = idParam;
     try {
         const video = await client_1.default.video.findUnique({
             where: { id, status: 'READY' }
@@ -58,7 +63,12 @@ const getVideoById = async (req, res) => {
 };
 exports.getVideoById = getVideoById;
 const viewVideo = async (req, res) => {
-    const { id } = req.params;
+    const idParam = req.params.id;
+    if (typeof idParam !== 'string') {
+        res.status(400).json({ error: 'Invalid ID' });
+        return;
+    }
+    const id = idParam;
     try {
         const video = await client_1.default.video.update({
             where: { id },
@@ -72,7 +82,12 @@ const viewVideo = async (req, res) => {
 };
 exports.viewVideo = viewVideo;
 const likeVideo = async (req, res) => {
-    const { id } = req.params;
+    const idParam = req.params.id;
+    if (typeof idParam !== 'string') {
+        res.status(400).json({ error: 'Invalid ID' });
+        return;
+    }
+    const id = idParam;
     try {
         const video = await client_1.default.video.update({
             where: { id },
@@ -86,7 +101,12 @@ const likeVideo = async (req, res) => {
 };
 exports.likeVideo = likeVideo;
 const downloadVideo = async (req, res) => {
-    const { id } = req.params;
+    const idParam = req.params.id;
+    if (typeof idParam !== 'string') {
+        res.status(400).json({ error: 'Invalid ID' });
+        return;
+    }
+    const id = idParam;
     try {
         const video = await client_1.default.video.update({
             where: { id },
@@ -99,4 +119,3 @@ const downloadVideo = async (req, res) => {
     }
 };
 exports.downloadVideo = downloadVideo;
-//# sourceMappingURL=publicController.js.map

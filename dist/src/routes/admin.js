@@ -20,4 +20,3 @@ router.get('/videos', adminController_1.getAllVideos);
 router.get('/videos/:id', adminController_1.getVideoById);
 router.post('/videos', upload.single('video'), adminController_1.uploadVideo);
 exports.default = router;
-//# sourceMappingURL=admin.js.map

@@ -116,4 +116,3 @@ const getVideoById = async (req, res) => {
     }
 };
 exports.getVideoById = getVideoById;
-//# sourceMappingURL=adminController.js.map

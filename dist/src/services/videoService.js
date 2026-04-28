@@ -44,4 +44,3 @@ const processVideoAsync = async (videoId, file) => {
     }, 10000); // 10 seconds simulation
 };
 exports.processVideoAsync = processVideoAsync;
-//# sourceMappingURL=videoService.js.map

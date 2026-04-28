@@ -10,4 +10,3 @@ router.post('/videos/:id/view', publicController_1.viewVideo);
 router.post('/videos/:id/like', publicController_1.likeVideo);
 router.post('/videos/:id/download', publicController_1.downloadVideo);
 exports.default = router;
-//# sourceMappingURL=public.js.map
