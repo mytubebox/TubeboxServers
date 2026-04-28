@@ -1,0 +1,39 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Admin {
+  id            String   @id @default(uuid())
+  username      String   @unique
+  password_hash String
+  created_at    DateTime @default(now())
+}
+
+model Video {
+  id            String   @id @default(uuid())
+  title         String
+  description   String?
+  thumbnail_url String?
+  video_url     String?  // Original uploaded file URL (e.g., in B2)
+  hls_url       String?  // URL to the .m3u8 playlist on the CDN
+  views         Int      @default(0)
+  likes         Int      @default(0)
+  downloads     Int      @default(0)
+  status        VideoStatus @default(UPLOADING)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+}
+
+enum VideoStatus {
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
+}
