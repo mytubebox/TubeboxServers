@@ -8,26 +8,29 @@ import crypto from 'crypto';
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-tubebox-key';
 
 export const login = async (req: Request, res: Response): Promise<void> => {
+  console.log("🔥 LOGIN ROUTE HIT");
+  console.log("🔥 Body:", req.body); 
+  console.log("🔥 Headers:", req.headers.authorization); 
   const { username, password } = req.body;
 
   try {
     const result = await pool.query('SELECT * FROM "Admin" WHERE username = $1', [username]);
     const admin = result.rows[0];
     if (!admin) {
-      res.status(401).json({ error: 'Invalid credentials' });
+      res.status(401).json({ error: 'Invalid credentials 400' });
       return;
     }
 
     const isValid = await bcrypt.compare(password, admin.password_hash);
     if (!isValid) {
-      res.status(401).json({ error: 'Invalid credentials' });
+      res.status(401).json({ error: 'Invalid credentials 401' });
       return;
     }
 
     const token = jwt.sign({ id: admin.id, username: admin.username }, JWT_SECRET, { expiresIn: '1d' });
     res.json({ token, admin: { id: admin.id, username: admin.username } });
   } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error ' });
   }
 };
 
