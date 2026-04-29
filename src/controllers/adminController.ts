@@ -105,33 +105,84 @@ export const getAllVideos = async (req: Request, res: Response): Promise<void> =
 };
 
 export const uploadVideo = async (req: Request, res: Response): Promise<void> => {
-  const { title, description } = req.body;
-  const file = req.file;
-
-  if (!file || !title) {
-    res.status(400).json({ error: 'Title and video file are required' });
-    return;
-  }
+  console.log("========== UPLOAD VIDEO START ==========");
+  console.log("Time:", new Date().toISOString());
 
   try {
-    // 1. Create a video record with status UPLOADING/PROCESSING
+    console.log("Headers:", req.headers);
+    console.log("Body:", req.body);
+    console.log("File Exists:", !!req.file);
+
+    const { title, description } = req.body;
+    const file = req.file;
+
+    if (file) {
+      console.log("File Details:", {
+        fieldname: file.fieldname,
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        filename: (file as any).filename,
+        path: (file as any).path
+      });
+    }
+
+    if (!file || !title) {
+      console.log("Validation Failed => Missing title or file");
+      res.status(400).json({
+        error: "Title and video file are required"
+      });
+      return;
+    }
+
+    console.log("Generating UUID...");
     const id = crypto.randomUUID();
+    console.log("Generated ID:", id);
+
+    console.log("Running DB Insert...");
+
     const result = await pool.query(
-      'INSERT INTO "Video" (id, title, description, status, updated_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
-      [id, title, description, 'PROCESSING']
+      `INSERT INTO "Video"
+       (id, title, description, status, updated_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       RETURNING *`,
+      [id, title, description, "PROCESSING"]
     );
+
+    console.log("DB Insert Success");
+    console.log("Rows Returned:", result.rows.length);
+
     const video = result.rows[0];
+    console.log("Inserted Video:", video);
 
-    // 2. Start async processing
-    processVideoAsync(video.id, file);
+    console.log("Starting Async Processing...");
 
-    // 3. Return response immediately (Fast response for admin)
+    try {
+      processVideoAsync(video.id, file);
+      console.log("processVideoAsync triggered successfully");
+    } catch (asyncErr) {
+      console.error("processVideoAsync immediate error:", asyncErr);
+    }
+
+    console.log("Sending Success Response...");
+
     res.status(201).json({
-      message: 'Video uploaded successfully and is now processing.',
+      message: "Video uploaded successfully and is now processing.",
       video
     });
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
+
+    console.log("========== UPLOAD VIDEO END SUCCESS ==========");
+
+  } catch (error: any) {
+    console.error("========== UPLOAD VIDEO ERROR ==========");
+    console.error("Message:", error?.message);
+    console.error("Stack:", error?.stack);
+    console.error("Full Error:", error);
+
+    res.status(500).json({
+      error: "Internal server error",
+      details: error?.message || "Unknown error"
+    });
   }
 };
 
