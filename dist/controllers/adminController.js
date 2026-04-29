@@ -6,13 +6,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getVideoById = exports.uploadVideo = exports.getAllVideos = exports.getAnalytics = exports.login = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const client_1 = __importDefault(require("../prisma/client"));
+const db_1 = __importDefault(require("../db"));
 const videoService_1 = require("../services/videoService");
+const crypto_1 = __importDefault(require("crypto"));
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-tubebox-key';
 const login = async (req, res) => {
     const { username, password } = req.body;
     try {
-        const admin = await client_1.default.admin.findUnique({ where: { username } });
+        const result = await db_1.default.query('SELECT * FROM "Admin" WHERE username = $1', [username]);
+        const admin = result.rows[0];
         if (!admin) {
             res.status(401).json({ error: 'Invalid credentials' });
             return;
@@ -32,19 +34,15 @@ const login = async (req, res) => {
 exports.login = login;
 const getAnalytics = async (req, res) => {
     try {
-        const totalVideos = await client_1.default.video.count();
-        const result = await client_1.default.video.aggregate({
-            _sum: {
-                views: true,
-                likes: true,
-                downloads: true
-            }
-        });
+        const countResult = await db_1.default.query('SELECT COUNT(*) FROM "Video"');
+        const totalVideos = parseInt(countResult.rows[0].count, 10);
+        const sumResult = await db_1.default.query('SELECT SUM(views) as views, SUM(likes) as likes, SUM(downloads) as downloads FROM "Video"');
+        const sums = sumResult.rows[0];
         res.json({
             totalVideos,
-            totalViews: result._sum.views || 0,
-            totalLikes: result._sum.likes || 0,
-            totalDownloads: result._sum.downloads || 0
+            totalViews: parseInt(sums.views) || 0,
+            totalLikes: parseInt(sums.likes) || 0,
+            totalDownloads: parseInt(sums.downloads) || 0
         });
     }
     catch (error) {
@@ -54,10 +52,8 @@ const getAnalytics = async (req, res) => {
 exports.getAnalytics = getAnalytics;
 const getAllVideos = async (req, res) => {
     try {
-        const videos = await client_1.default.video.findMany({
-            orderBy: { created_at: 'desc' }
-        });
-        res.json(videos);
+        const result = await db_1.default.query('SELECT * FROM "Video" ORDER BY created_at DESC');
+        res.json(result.rows);
     }
     catch (error) {
         res.status(500).json({ error: 'Internal server error' });
@@ -73,13 +69,9 @@ const uploadVideo = async (req, res) => {
     }
     try {
         // 1. Create a video record with status UPLOADING/PROCESSING
-        const video = await client_1.default.video.create({
-            data: {
-                title,
-                description,
-                status: 'PROCESSING'
-            }
-        });
+        const id = crypto_1.default.randomUUID();
+        const result = await db_1.default.query('INSERT INTO "Video" (id, title, description, status, updated_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *', [id, title, description, 'PROCESSING']);
+        const video = result.rows[0];
         // 2. Start async processing
         (0, videoService_1.processVideoAsync)(video.id, file);
         // 3. Return response immediately (Fast response for admin)
@@ -102,9 +94,8 @@ const getVideoById = async (req, res) => {
     }
     const id = idParam;
     try {
-        const video = await client_1.default.video.findUnique({
-            where: { id }
-        });
+        const result = await db_1.default.query('SELECT * FROM "Video" WHERE id = $1', [id]);
+        const video = result.rows[0];
         if (!video) {
             res.status(404).json({ error: 'Video not found' });
             return;

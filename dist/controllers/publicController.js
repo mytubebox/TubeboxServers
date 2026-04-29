@@ -4,27 +4,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.downloadVideo = exports.likeVideo = exports.viewVideo = exports.getVideoById = exports.getVideos = void 0;
-const client_1 = __importDefault(require("../prisma/client"));
+const db_1 = __importDefault(require("../db"));
 const getVideos = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
     try {
-        const videos = await client_1.default.video.findMany({
-            where: { status: 'READY' },
-            orderBy: { created_at: 'desc' },
-            skip,
-            take: limit,
-            select: {
-                id: true,
-                title: true,
-                thumbnail_url: true,
-                views: true,
-                likes: true,
-                created_at: true
-            }
-        });
-        const total = await client_1.default.video.count({ where: { status: 'READY' } });
+        const result = await db_1.default.query('SELECT id, title, thumbnail_url, views, likes, created_at FROM "Video" WHERE status = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3', ['READY', limit, skip]);
+        const videos = result.rows;
+        const countResult = await db_1.default.query('SELECT COUNT(*) FROM "Video" WHERE status = $1', ['READY']);
+        const total = parseInt(countResult.rows[0].count, 10);
         res.json({
             data: videos,
             meta: {
@@ -48,9 +37,8 @@ const getVideoById = async (req, res) => {
     }
     const id = idParam;
     try {
-        const video = await client_1.default.video.findUnique({
-            where: { id, status: 'READY' }
-        });
+        const result = await db_1.default.query('SELECT * FROM "Video" WHERE id = $1 AND status = $2', [id, 'READY']);
+        const video = result.rows[0];
         if (!video) {
             res.status(404).json({ error: 'Video not found or not ready yet' });
             return;
@@ -70,11 +58,8 @@ const viewVideo = async (req, res) => {
     }
     const id = idParam;
     try {
-        const video = await client_1.default.video.update({
-            where: { id },
-            data: { views: { increment: 1 } }
-        });
-        res.json({ success: true, views: video.views });
+        const result = await db_1.default.query('UPDATE "Video" SET views = views + 1 WHERE id = $1 RETURNING views', [id]);
+        res.json({ success: true, views: result.rows[0]?.views });
     }
     catch (error) {
         res.status(500).json({ error: 'Internal server error' });
@@ -89,11 +74,8 @@ const likeVideo = async (req, res) => {
     }
     const id = idParam;
     try {
-        const video = await client_1.default.video.update({
-            where: { id },
-            data: { likes: { increment: 1 } }
-        });
-        res.json({ success: true, likes: video.likes });
+        const result = await db_1.default.query('UPDATE "Video" SET likes = likes + 1 WHERE id = $1 RETURNING likes', [id]);
+        res.json({ success: true, likes: result.rows[0]?.likes });
     }
     catch (error) {
         res.status(500).json({ error: 'Internal server error' });
@@ -108,11 +90,8 @@ const downloadVideo = async (req, res) => {
     }
     const id = idParam;
     try {
-        const video = await client_1.default.video.update({
-            where: { id },
-            data: { downloads: { increment: 1 } }
-        });
-        res.json({ success: true, downloads: video.downloads });
+        const result = await db_1.default.query('UPDATE "Video" SET downloads = downloads + 1 WHERE id = $1 RETURNING downloads', [id]);
+        res.json({ success: true, downloads: result.rows[0]?.downloads });
     }
     catch (error) {
         res.status(500).json({ error: 'Internal server error' });

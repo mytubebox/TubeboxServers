@@ -10,6 +10,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
 // 🔍 DEBUG: show env status (safe, no secrets)
 console.log('🚀 Starting server...');
 console.log('ENV CHECK:', {

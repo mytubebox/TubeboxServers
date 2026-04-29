@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import prisma from '../prisma/client';
+import pool from '../db';
 import { processVideoAsync } from '../services/videoService';
+import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-tubebox-key';
 
@@ -10,7 +11,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   const { username, password } = req.body;
 
   try {
-    const admin = await prisma.admin.findUnique({ where: { username } });
+    const result = await pool.query('SELECT * FROM "Admin" WHERE username = $1', [username]);
+    const admin = result.rows[0];
     if (!admin) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
@@ -31,20 +33,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 export const getAnalytics = async (req: Request, res: Response): Promise<void> => {
   try {
-    const totalVideos = await prisma.video.count();
-    const result = await prisma.video.aggregate({
-      _sum: {
-        views: true,
-        likes: true,
-        downloads: true
-      }
-    });
+    const countResult = await pool.query('SELECT COUNT(*) FROM "Video"');
+    const totalVideos = parseInt(countResult.rows[0].count, 10);
+
+    const sumResult = await pool.query('SELECT SUM(views) as views, SUM(likes) as likes, SUM(downloads) as downloads FROM "Video"');
+    const sums = sumResult.rows[0];
 
     res.json({
       totalVideos,
-      totalViews: result._sum.views || 0,
-      totalLikes: result._sum.likes || 0,
-      totalDownloads: result._sum.downloads || 0
+      totalViews: parseInt(sums.views) || 0,
+      totalLikes: parseInt(sums.likes) || 0,
+      totalDownloads: parseInt(sums.downloads) || 0
     });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
@@ -53,10 +52,8 @@ export const getAnalytics = async (req: Request, res: Response): Promise<void> =
 
 export const getAllVideos = async (req: Request, res: Response): Promise<void> => {
   try {
-    const videos = await prisma.video.findMany({
-      orderBy: { created_at: 'desc' }
-    });
-    res.json(videos);
+    const result = await pool.query('SELECT * FROM "Video" ORDER BY created_at DESC');
+    res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -73,13 +70,12 @@ export const uploadVideo = async (req: Request, res: Response): Promise<void> =>
 
   try {
     // 1. Create a video record with status UPLOADING/PROCESSING
-    const video = await prisma.video.create({
-      data: {
-        title,
-        description,
-        status: 'PROCESSING'
-      }
-    });
+    const id = crypto.randomUUID();
+    const result = await pool.query(
+      'INSERT INTO "Video" (id, title, description, status, updated_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
+      [id, title, description, 'PROCESSING']
+    );
+    const video = result.rows[0];
 
     // 2. Start async processing
     processVideoAsync(video.id, file);
@@ -110,9 +106,8 @@ export const getVideoById = async (
   const id = idParam;
 
   try {
-    const video = await prisma.video.findUnique({
-      where: { id }
-    });
+    const result = await pool.query('SELECT * FROM "Video" WHERE id = $1', [id]);
+    const video = result.rows[0];
 
     if (!video) {
       res.status(404).json({ error: 'Video not found' });

@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.processVideoAsync = void 0;
-const client_1 = __importDefault(require("../prisma/client"));
+const db_1 = __importDefault(require("../db"));
 /**
  * MOCK Video Service
  * In a production environment, this service would:
@@ -23,23 +23,17 @@ const processVideoAsync = async (videoId, file) => {
         try {
             console.log(`[VideoService] Finishing processing for video ${videoId}`);
             // Update the DB to mark as ready and set mock URLs
-            await client_1.default.video.update({
-                where: { id: videoId },
-                data: {
-                    status: 'READY',
-                    // In reality, this would be the CDN URL pointing to the B2 bucket HLS playlist
-                    hls_url: `https://cdn.tubebox.example.com/videos/${videoId}/playlist.m3u8`,
-                    video_url: `https://cdn.tubebox.example.com/raw/${videoId}/video.mp4`
-                }
-            });
+            await db_1.default.query('UPDATE "Video" SET status = $1, hls_url = $2, video_url = $3, updated_at = NOW() WHERE id = $4', [
+                'READY',
+                `https://cdn.tubebox.example.com/videos/${videoId}/playlist.m3u8`,
+                `https://cdn.tubebox.example.com/raw/${videoId}/video.mp4`,
+                videoId
+            ]);
             console.log(`[VideoService] Video ${videoId} is now READY`);
         }
         catch (error) {
             console.error(`[VideoService] Error processing video ${videoId}`, error);
-            await client_1.default.video.update({
-                where: { id: videoId },
-                data: { status: 'FAILED' }
-            });
+            await db_1.default.query('UPDATE "Video" SET status = $1, updated_at = NOW() WHERE id = $2', ['FAILED', videoId]);
         }
     }, 10000); // 10 seconds simulation
 };
