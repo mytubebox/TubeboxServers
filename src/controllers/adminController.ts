@@ -51,8 +51,8 @@ export const signup = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   console.log("🔥 LOGIN ROUTE HIT");
-  console.log("🔥 Body:", req.body); 
-  console.log("🔥 Headers:", req.headers.authorization); 
+  console.log("🔥 Body:", req.body);
+  console.log("🔥 Headers:", req.headers.authorization);
   const { username, password } = req.body;
 
   try {
@@ -158,7 +158,17 @@ export const uploadVideo = async (req: Request, res: Response): Promise<void> =>
     console.log("Starting Async Processing...");
 
     try {
-      processVideoAsync(video.id, file);
+      processVideoAsync(video.id, file)
+        .then(() => {
+          console.log("Processing completed:", video.id);
+        })
+        .catch(async (err) => {
+          console.error("Processing failed:", err);
+          await pool.query(
+            `UPDATE "Video" SET status = $1 WHERE id = $2`,
+            ["FAILED", video.id]
+          );
+        });
       console.log("processVideoAsync triggered successfully");
     } catch (asyncErr) {
       console.error("processVideoAsync immediate error:", asyncErr);
