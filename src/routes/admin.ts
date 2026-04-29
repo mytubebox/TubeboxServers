@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { authenticateAdmin } from '../middlewares/auth';
-import { login, getAnalytics, getAllVideos, uploadVideo, getVideoById } from '../controllers/adminController';
+import { login, signup, getAnalytics, getAllVideos, uploadVideo, getVideoById } from '../controllers/adminController';
 
 const router = Router();
 
@@ -11,6 +11,7 @@ const upload = multer({ dest: 'uploads/' });
 
 // Auth
 router.post('/login', login);
+router.post('/signup', signup);
 
 // Protected routes
 router.use(authenticateAdmin);

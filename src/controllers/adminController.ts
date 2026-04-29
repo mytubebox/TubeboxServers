@@ -7,6 +7,48 @@ import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-tubebox-key';
 
+export const signup = async (req: Request, res: Response): Promise<void> => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    res.status(400).json({ error: 'Username and password required' });
+    return;
+  }
+
+  try {
+    // Check if user exists
+    const existing = await pool.query(
+      'SELECT id FROM "Admin" WHERE username = $1',
+      [username]
+    );
+
+    if (existing.rows.length > 0) {
+      res.status(409).json({ error: 'Admin already exists' });
+      return;
+    }
+
+    // 🔐 Hash password
+    const saltRounds = 10;
+    const password_hash = await bcrypt.hash(password, saltRounds);
+
+    const id = crypto.randomUUID();
+
+    const result = await pool.query(
+      'INSERT INTO "Admin" (id, username, password_hash) VALUES ($1, $2, $3) RETURNING id, username',
+      [id, username, password_hash]
+    );
+
+    res.status(201).json({
+      message: 'Admin created successfully',
+      admin: result.rows[0]
+    });
+
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const login = async (req: Request, res: Response): Promise<void> => {
   console.log("🔥 LOGIN ROUTE HIT");
   console.log("🔥 Body:", req.body); 
