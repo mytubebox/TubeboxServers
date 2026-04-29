@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { authenticateAdmin } from '../middlewares/auth';
-import { login, signup, getAnalytics, getAllVideos, uploadVideo, getVideoById } from '../controllers/adminController';
+import { login, signup, getAnalytics, getAllVideos, uploadVideo, getVideoById, deleteVideo } from '../controllers/adminController';
 
 const router = Router();
 
@@ -19,5 +19,6 @@ router.get('/analytics', getAnalytics);
 router.get('/videos', getAllVideos);
 router.get('/videos/:id', getVideoById);
 router.post('/videos', upload.single('video'), uploadVideo);
+router.delete('/videos/:id', deleteVideo);
 
 export default router;

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import pool from '../db';
-import { processVideoAsync } from '../services/videoService';
+import { processVideoAsync, deleteVideoFilesAsync } from '../services/videoService';
 import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-tubebox-key';
@@ -222,6 +222,40 @@ export const getVideoById = async (
 
     res.json(video);
   } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const deleteVideo = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const idParam = req.params.id;
+
+  if (typeof idParam !== 'string') {
+    res.status(400).json({ error: 'Invalid ID format' });
+    return;
+  }
+
+  const id = idParam;
+
+  try {
+    const result = await pool.query('DELETE FROM "Video" WHERE id = $1 RETURNING *', [id]);
+    const video = result.rows[0];
+
+    if (!video) {
+      res.status(404).json({ error: 'Video not found' });
+      return;
+    }
+
+    // Trigger async deletion from B2 storage
+    deleteVideoFilesAsync(id).catch(err => {
+      console.error(`Failed to delete B2 files asynchronously for video ${id}:`, err);
+    });
+
+    res.json({ message: 'Video deleted successfully', video });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

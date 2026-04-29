@@ -3,6 +3,7 @@
 import fs from "fs";
 import path from "path";
 import { Upload } from "@aws-sdk/lib-storage";
+import { DeleteObjectsCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { s3 } from "../config/b2";
 import pool from "../db";
 import ffmpeg from "fluent-ffmpeg";
@@ -173,7 +174,6 @@ export const processVideoAsync = async (
     const base =
       process.env.CLOUDFLARE_DOMAIN ||
       `https://f000.backblazeb2.com/file/${bucketName}`;
-
     const hlsUrl = `${base}/videos/${videoId}/index.m3u8`;
     const videoUrl = `${base}/raw/${videoId}/video.mp4`;
     const thumbnailUrl = `${base}/videos/${videoId}/thumb.png`;
@@ -228,5 +228,55 @@ export const processVideoAsync = async (
     }
 
     console.log(`================ FAILURE END =================\n`);
+  }
+};
+
+export const deleteVideoFilesAsync = async (videoId: string) => {
+  console.log(`\n================ B2 DELETE PROCESS START ================`);
+  console.log(`[INIT] Video ID to delete: ${videoId}`);
+
+  const bucketName = process.env.B2_BUCKET_NAME!;
+
+  try {
+    const prefixes = [`videos/${videoId}/`, `raw/${videoId}/`];
+
+    for (const prefix of prefixes) {
+      console.log(`[B2 DELETE] Listing objects with prefix: ${prefix}`);
+      let continuationToken: string | undefined = undefined;
+
+      do {
+        const listCmd: any = new ListObjectsV2Command({
+          Bucket: bucketName,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        });
+
+        const listRes: any = await s3.send(listCmd);
+
+        if (listRes.Contents && listRes.Contents.length > 0) {
+          console.log(`[B2 DELETE] Found ${listRes.Contents.length} objects to delete in ${prefix}`);
+          
+          const deleteCmd: any = new DeleteObjectsCommand({
+            Bucket: bucketName,
+            Delete: {
+              Objects: listRes.Contents.map((c: any) => ({ Key: c.Key })),
+            },
+          });
+
+          await s3.send(deleteCmd);
+          console.log(`[B2 DELETE] Deleted ${listRes.Contents.length} objects`);
+        } else {
+          console.log(`[B2 DELETE] No objects found for prefix: ${prefix}`);
+        }
+
+        continuationToken = listRes.NextContinuationToken;
+      } while (continuationToken);
+    }
+
+    console.log(`[SUCCESS] B2 files for video ${videoId} deleted successfully`);
+  } catch (error) {
+    console.error(`[ERROR] Failed to delete B2 files for video ${videoId}:`, error);
+  } finally {
+    console.log(`================ B2 DELETE PROCESS END =================\n`);
   }
 };
