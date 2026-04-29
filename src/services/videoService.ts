@@ -7,6 +7,7 @@ import { s3 } from "../config/b2";
 import pool from "../db";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
+// @ts-ignore
 import ffprobeStatic from "ffprobe-static";
 
 // ✅ Set ffmpeg + ffprobe
