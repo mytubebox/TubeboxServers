@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import adminRoutes from './routes/admin';
 import publicRoutes from './routes/public';
 import adsRoutes from './routes/ads';
+import analyticsRoutes from './routes/analytics';
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/admin', adminRoutes);
 app.use('/api/ads', adsRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api', publicRoutes);
 
 // Health check
