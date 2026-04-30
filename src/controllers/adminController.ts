@@ -98,6 +98,9 @@ export const getAnalytics = async (req: Request, res: Response): Promise<void> =
 export const getAllVideos = async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await pool.query('SELECT * FROM "Video" ORDER BY updated_at DESC');
+    console.log("🔥 DB CHECK");
+    const count = await pool.query('SELECT COUNT(*) FROM "Video"');
+    console.log("Total Videos:", count.rows[0].count);
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });
