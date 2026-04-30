@@ -143,8 +143,8 @@ export const uploadVideo = async (req: Request, res: Response): Promise<void> =>
 
     const result = await pool.query(
       `INSERT INTO "Video"
-       (id, title, description, status, updated_at)
-       VALUES ($1, $2, $3, $4, NOW())
+      (id, title, description, status, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, NOW(), NOW())
        RETURNING *`,
       [id, title, description, "PROCESSING"]
     );
