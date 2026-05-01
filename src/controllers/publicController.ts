@@ -54,6 +54,34 @@ const id = idParam;
   }
 };
 
+
+export const getVideosByIds = async (req: Request, res: Response): Promise<void> => {
+  const ids = req.body.ids;
+
+  // Validate input
+  if (!Array.isArray(ids) || ids.length === 0) {
+    res.status(400).json({ error: 'ids must be a non-empty array' });
+    return;
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT id, title, thumbnail_url, views, likes, created_at 
+       FROM "Video" 
+       WHERE id = ANY($1) AND status = $2`,
+      [ids, 'READY']
+    );
+
+    res.json({
+      data: result.rows,
+      count: result.rows.length
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export const viewVideo = async (req: Request, res: Response): Promise<void> => {
   const idParam = req.params.id;
 
