@@ -148,6 +148,8 @@ export const initTelegramBot = () => {
             .then(() => {
               console.log(`[TelegramBot] Processing completed for video: ${videoId}`);
               bot?.sendMessage(chatId, `✅ Video \`${videoId}\` has finished processing and is READY!`, { parse_mode: 'Markdown' });
+              bot?.sendMessage(chatId, `https:tubebox.in/\`${videoId}\``, { parse_mode: 'Markdown' });
+
             })
             .catch(async (err) => {
               console.error(`[TelegramBot] Processing failed for video: ${videoId}`, err);
