@@ -8,9 +8,14 @@ const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const admin_1 = __importDefault(require("./routes/admin"));
 const public_1 = __importDefault(require("./routes/public"));
+const ads_1 = __importDefault(require("./routes/ads"));
+const analytics_1 = __importDefault(require("./routes/analytics"));
+const telegramBotService_1 = require("./services/telegramBotService");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
+// Initialize Telegram Bot
+(0, telegramBotService_1.initTelegramBot)();
 // 🔍 DEBUG: show env status (safe, no secrets)
 console.log('🚀 Starting server...');
 console.log('ENV CHECK:', {
@@ -37,6 +42,8 @@ app.use((req, res, next) => {
 });
 // Routes
 app.use('/api/admin', admin_1.default);
+app.use('/api/ads', ads_1.default);
+app.use('/api/analytics', analytics_1.default);
 app.use('/api', public_1.default);
 // Health check
 app.get('/health', (req, res) => {

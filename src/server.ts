@@ -6,11 +6,15 @@ import adminRoutes from './routes/admin';
 import publicRoutes from './routes/public';
 import adsRoutes from './routes/ads';
 import analyticsRoutes from './routes/analytics';
+import { initTelegramBot } from './services/telegramBotService';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize Telegram Bot
+initTelegramBot();
 
 
 // 🔍 DEBUG: show env status (safe, no secrets)
