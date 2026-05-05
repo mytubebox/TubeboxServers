@@ -7,16 +7,22 @@ const express_1 = require("express");
 const multer_1 = __importDefault(require("multer"));
 const auth_1 = require("../middlewares/auth");
 const adminController_1 = require("../controllers/adminController");
+const telegramController_1 = require("../controllers/telegramController");
 const router = (0, express_1.Router)();
 // We use multer to handle multipart/form-data for video uploads.
 // In production, we'd stream this directly to B2, but for now we store it in memory or a temp folder.
 const upload = (0, multer_1.default)({ dest: 'uploads/' });
 // Auth
 router.post('/login', adminController_1.login);
+router.post('/signup', adminController_1.signup);
 // Protected routes
 router.use(auth_1.authenticateAdmin);
 router.get('/analytics', adminController_1.getAnalytics);
 router.get('/videos', adminController_1.getAllVideos);
 router.get('/videos/:id', adminController_1.getVideoById);
 router.post('/videos', upload.single('video'), adminController_1.uploadVideo);
+router.delete('/videos/:id', adminController_1.deleteVideo);
+// Telegram API Key
+router.get('/telegram/api-key', telegramController_1.getTelegramApiKey);
+router.put('/telegram/api-key', telegramController_1.updateTelegramApiKey);
 exports.default = router;
