@@ -91,9 +91,16 @@ export const initTelegramBot = () => {
         }
 
         const fileId = msg.video?.file_id || msg.document?.file_id;
+        const fileSize = msg.video?.file_size || msg.document?.file_size;
         
         if (!fileId) {
           bot?.sendMessage(chatId, 'Could not detect the file. Please upload a valid video.');
+          return;
+        }
+
+        // Telegram Bot API restricts file downloads to 20MB
+        if (fileSize && fileSize > 20 * 1024 * 1024) {
+          bot?.sendMessage(chatId, '⚠️ Telegram limits bot file downloads to 20MB. Please use the Tubebox website to upload videos larger than 20MB.');
           return;
         }
 
@@ -114,8 +121,8 @@ export const initTelegramBot = () => {
         // Insert into Database
         const dbResult = await pool.query(
           `INSERT INTO "Video"
-           (id, title, description, status, updated_at)
-           VALUES ($1, $2, $3, $4, NOW())
+           (id, title, description, status, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, NOW(), NOW())
            RETURNING *`,
           [videoId, title, description, "PROCESSING"]
         );
@@ -148,7 +155,7 @@ export const initTelegramBot = () => {
             .then(() => {
               console.log(`[TelegramBot] Processing completed for video: ${videoId}`);
               bot?.sendMessage(chatId, `✅ Video \`${videoId}\` has finished processing and is READY!`, { parse_mode: 'Markdown' });
-              bot?.sendMessage(chatId, `https:tubebox.in/\`${videoId}\``, { parse_mode: 'Markdown' });
+              bot?.sendMessage(chatId, `https://tubebox.in/videos/${videoId}`, { parse_mode: 'Markdown' });
 
             })
             .catch(async (err) => {
