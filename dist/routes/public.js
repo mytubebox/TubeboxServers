@@ -6,6 +6,7 @@ const router = (0, express_1.Router)();
 // Publicly accessible routes
 router.get('/videos', publicController_1.getVideos);
 router.get('/videos/:id', publicController_1.getVideoById);
+router.post('/videos/bulk', publicController_1.getVideosByIds);
 router.post('/videos/:id/view', publicController_1.viewVideo);
 router.post('/videos/:id/like', publicController_1.likeVideo);
 router.post('/videos/:id/download', publicController_1.downloadVideo);

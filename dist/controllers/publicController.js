@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.downloadVideo = exports.likeVideo = exports.viewVideo = exports.getVideoById = exports.getVideos = void 0;
+exports.downloadVideo = exports.likeVideo = exports.viewVideo = exports.getVideosByIds = exports.getVideoById = exports.getVideos = void 0;
 const db_1 = __importDefault(require("../db"));
 const getVideos = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
@@ -50,6 +50,27 @@ const getVideoById = async (req, res) => {
     }
 };
 exports.getVideoById = getVideoById;
+const getVideosByIds = async (req, res) => {
+    const ids = req.body.ids;
+    // Validate input
+    if (!Array.isArray(ids) || ids.length === 0) {
+        res.status(400).json({ error: 'ids must be a non-empty array' });
+        return;
+    }
+    try {
+        const result = await db_1.default.query(`SELECT id, title, thumbnail_url, views, likes, created_at 
+       FROM "Video" 
+       WHERE id = ANY($1) AND status = $2`, [ids, 'READY']);
+        res.json({
+            data: result.rows,
+            count: result.rows.length
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+exports.getVideosByIds = getVideosByIds;
 const viewVideo = async (req, res) => {
     const idParam = req.params.id;
     if (typeof idParam !== 'string') {

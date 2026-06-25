@@ -41,7 +41,7 @@ const processVideoAsync = async (videoId, file) => {
                 "-g 48",
                 "-sc_threshold 0",
                 "-map 0:v:0",
-                "-map 0:a:0",
+                "-map 0:a:0?",
                 "-b:v:0 1500k",
                 "-s:v:0 1280x720",
                 "-f hls",

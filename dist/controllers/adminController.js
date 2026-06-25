@@ -84,7 +84,10 @@ const getAnalytics = async (req, res) => {
 exports.getAnalytics = getAnalytics;
 const getAllVideos = async (req, res) => {
     try {
-        const result = await db_1.default.query('SELECT * FROM "Video" ORDER BY created_at DESC');
+        const result = await db_1.default.query('SELECT * FROM "Video" ORDER BY updated_at DESC');
+        console.log("🔥 DB CHECK");
+        const count = await db_1.default.query('SELECT COUNT(*) FROM "Video"');
+        console.log("Total Videos:", count.rows[0].count);
         res.json(result.rows);
     }
     catch (error) {
@@ -123,8 +126,8 @@ const uploadVideo = async (req, res) => {
         console.log("Generated ID:", id);
         console.log("Running DB Insert...");
         const result = await db_1.default.query(`INSERT INTO "Video"
-       (id, title, description, status, updated_at)
-       VALUES ($1, $2, $3, $4, NOW())
+      (id, title, description, status, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, NOW(), NOW())
        RETURNING *`, [id, title, description, "PROCESSING"]);
         console.log("DB Insert Success");
         console.log("Rows Returned:", result.rows.length);
