@@ -94,29 +94,33 @@ export const processVideoAsync = async (
     // ☁️ STEP 2: Upload HLS
     console.log(`[STEP 2] Uploading HLS files to B2...`);
 
-    await Promise.all(
-      files.map(async (fileName) => {
-        const filePath = path.join(outputDir, fileName);
+    // Upload files in batches of 5 to prevent OOM / connection exhaustion
+    const concurrencyLimit = 5;
+    for (let i = 0; i < files.length; i += concurrencyLimit) {
+      const batch = files.slice(i, i + concurrencyLimit);
+      
+      if (i % 25 === 0 || i + concurrencyLimit >= files.length) {
+        console.log(`[UPLOAD] Progress: ${i}/${files.length} HLS files uploaded...`);
+      }
 
-        console.log(`[UPLOAD] Uploading: ${fileName}`);
-
-        const upload = new Upload({
-          client: s3,
-          params: {
-            Bucket: bucketName,
-            Key: `videos/${videoId}/${fileName}`,
-            Body: fs.createReadStream(filePath),
-            ContentType: fileName.endsWith(".m3u8")
-              ? "application/vnd.apple.mpegurl"
-              : "video/MP2T",
-          },
-        });
-
-        await upload.done();
-
-        console.log(`[UPLOAD DONE] ${fileName}`);
-      })
-    );
+      await Promise.all(
+        batch.map(async (fileName) => {
+          const filePath = path.join(outputDir, fileName);
+          const upload = new Upload({
+            client: s3,
+            params: {
+              Bucket: bucketName,
+              Key: `videos/${videoId}/${fileName}`,
+              Body: fs.createReadStream(filePath),
+              ContentType: fileName.endsWith(".m3u8")
+                ? "application/vnd.apple.mpegurl"
+                : "video/MP2T",
+            },
+          });
+          await upload.done();
+        })
+      );
+    }
 
     console.log(`[STEP 2] All HLS files uploaded`);
 
